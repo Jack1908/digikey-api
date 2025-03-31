@@ -1,0 +1,6 @@
+# DigiKey API Configuration
+digikey:
+  client_id: "mvvZalthj11MuItgMS9R8ihVHww0xLAe"  # Your DigiKey Client ID
+  client_secret: "SGiETwqmFzaqG3qr"  # Your DigiKey Client Secret
+  redirect_uri: "http://localhost:8080/callback"  # Default redirect URI for OAuth2
+  sandbox: "false"  # Set to false for production environment 
