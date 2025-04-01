@@ -1,133 +1,181 @@
-Python Client for Digikey API
-=================================
-Search for parts in the Digi-Key catalog by keyword using KeywordSearch. Then make a PartDetails call to retrieve all
-real time information about the part including pricing. PartDetails works best with Digi-Key part numbers as some
-manufacturers overlap other manufacturer part numbers.
+# DigiKey Component Search Tool
 
-[![Pypi](https://img.shields.io/pypi/v/digikey-api.svg?color=brightgreen)](https://pypi.org/project/digikey-api/)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-gold.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=53HWHHVCJ3D4J&currency_code=EUR&source=url)
+This tool allows you to search for electronic components using the DigiKey API.
 
-# What does it do
-`digikey-api` is an [Digkey Part Search API](https://api-portal.digikey.com/node/8517) client for Python 3.6+. API response data is returned as Python objects that attempt to make it easy to get the data you want. Not all endpoints have been implemented.
+## Installation
 
-# Quickstart
-
-## Install
-```sh
-pip install digikey-api
-
-cache_dir="path/to/cache/dir"
-mkdir -p $cache_dir
-
-export DIGIKEY_CLIENT_ID="client_id"
-export DIGIKEY_CLIENT_SECRET="client_secret"
-export DIGIKEY_STORAGE_PATH="${cache_dir}"
+1. Install required packages:
+```bash
+pip install -r requirements.txt
 ```
 
-The cache dir is used to store the OAUTH access and refresh token, if you delete it you will need to login again.
+2. Set up your `config.yaml` file with your DigiKey API credentials.
 
-# API V3
-## Register
-Register an app on the Digikey API portal: [Digi-Key API V3](https://developer.digikey.com/get_started). You will need
-the client ID and the client secret to use the API. You will also need a Digi-Key account to authenticate, using the
-Oauth2 process.
+## Usage
 
-When registering an app the OAuth Callback needs to be set to `https://localhost:8139/digikey_callback`.
+### Basic Commands
 
-## Use [API V3]
-Python will automatically spawn a browser to allow you to authenticate using the Oauth2 process. After obtaining a token
-the library will cache the access token and use the refresh token to automatically refresh your credentials.
-
-You can test your application using the sandbox API, the data returned from a Sandbox API may not be complete, but the
-structure of the Sandbox API response will be a representation of what to expect in Production.
-
-For valid responses make sure you ue the client ID and secret for a [Production App](https://developer.digikey.com/documentation/organization).
-Otherwise, it is possible that dummy data is returned and you will pull your hair as to why it doesn't work.
-
-```python
-import os
-from pathlib import Path
-
-import digikey
-from digikey.v3.productinformation import KeywordSearchRequest
-from digikey.v3.batchproductdetails import BatchProductDetailsRequest
-
-CACHE_DIR = Path('path/to/cache/dir')
-
-os.environ['DIGIKEY_CLIENT_ID'] = 'client_id'
-os.environ['DIGIKEY_CLIENT_SECRET'] = 'client_secret'
-os.environ['DIGIKEY_CLIENT_SANDBOX'] = 'False'
-os.environ['DIGIKEY_STORAGE_PATH'] = CACHE_DIR
-
-# Query product number
-dkpn = '296-6501-1-ND'
-part = digikey.product_details(dkpn)
-
-# Search for parts
-search_request = KeywordSearchRequest(keywords='CRCW080510K0FKEA', record_count=10)
-result = digikey.keyword_search(body=search_request)
-
-# Only if BatchProductDetails endpoint is explicitly enabled
-# Search for Batch of Parts/Product
-mpn_list = ["0ZCK0050FF2E", "LR1F1K0"] #Length upto 50
-batch_request = BatchProductDetailsRequest(products=mpn_list)
-part_results = digikey.batch_product_details(body=batch_request)
+1. Search by keyword:
+```bash
+python3 search_components.py -k "Arduino Uno"
 ```
 
-## Logging [API V3]
-Logging is not forced upon the user but can be enabled according to convention:
-```python
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-digikey_logger = logging.getLogger('digikey')
-digikey_logger.setLevel(logging.DEBUG)
-
-handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-digikey_logger.addHandler(handler)
+2. Search by part number:
+```bash
+python3 search_components.py -p "1050-1024-ND"
 ```
 
-## Top-level APIs
-
-#### Product Information
-All functions from the [PartSearch](https://developer.digikey.com/products/product-information/partsearch/) API have been implemented.
-* `digikey.keyword_search()`
-* `digikey.product_details()`
-* `digikey.digi_reel_pricing()`
-* `digikey.suggested_parts()`
-* `digikey.manufacturer_product_details()`
-
-#### Batch Product Details
-The one function from the [BatchProductDetailsAPI](https://developer.digikey.com/products/batch-productdetails/batchproductdetailsapi) API has been implemented.
-* `digikey.batch_product_details()`
-
-#### Order Support
-All functions from the [OrderDetails](https://developer.digikey.com/products/order-support/orderdetails/) API have been implemented.
-* `digikey.salesorder_history()`
-* `digikey.status_salesorder_id()`
-
-#### Barcode
-TODO
-
-## API Limits
-The API has a limited amount of requests you can make per time interval [Digikey Rate Limits](https://developer.digikey.com/documentation/shared-concepts#rate-limits).
-
-It is possible to retrieve the number of max requests and current requests by passing an optional api_limits kwarg to an API function:
-```python
-api_limit = {}
-search_request = KeywordSearchRequest(keywords='CRCW080510K0FKEA', record_count=10)
-result = digikey.keyword_search(body=search_request, api_limits=api_limit)
+3. Search from CSV file:
+```bash
+python3 search_components.py -i input.csv
 ```
 
-The dict will be filled with the information returned from the API:
-```python
-{
-    'api_requests_limit': 1000,
-    'api_requests_remaining': 139
-}
+### Options
+
+- `-k`, `--keyword`: Search by keyword
+- `-p`, `--part-number`: Search by specific part number
+- `-i`, `--input-csv`: Input CSV file containing part numbers
+- `-c`, `--count`: Number of results to return (default: 10)
+- `--csv`: Save results to CSV file
+- `-o`, `--output`: Output CSV filename (default: search_results.csv)
+
+### CSV File Format
+
+For input CSV files:
+- Must contain a 'Part Number' column
+- Example:
+```csv
+Part Number
+1050-1024-ND
+1050-1041-ND
 ```
-Sometimes the API does not return any rate limit data, the values will then be set to None.
+
+For output CSV files:
+- Contains the following columns:
+  - Part Number
+  - Manufacturer
+  - Description
+  - Category
+  - Detailed Description
+  - Primary Photo
+  - Unit Price
+
+## Configuration
+
+Create a `config.yaml` file with your DigiKey API credentials:
+```yaml
+digikey:
+  client_id: "your-client-id"
+  client_secret: "your-client-secret"
+  redirect_uri: "http://localhost:8080/callback"
+  sandbox: true  # Set to false for production environment
+```
+
+## Windows 11 Setup
+
+This project can run on Windows 11. Follow these steps:
+
+1. **Python Installation**:
+   - Download and install Python 3.9 or later from [python.org](https://www.python.org/downloads/windows/)
+   - During installation, make sure to check "Add Python to PATH"
+
+2. **Environment Setup**:
+   - Open Command Prompt or PowerShell
+   - Create a virtual environment:
+     ```cmd
+     python -m venv digikey-env
+     ```
+   - Activate the virtual environment:
+     ```cmd
+     digikey-env\Scripts\activate
+     ```
+
+3. **Install Dependencies**:
+   - Install required packages:
+     ```cmd
+     pip install -r requirements.txt
+     ```
+
+4. **Configuration**:
+   - Create the `config.yaml` file in the project directory
+   - Create the `.digikey_storage` directory manually
+
+5. **Running the Tool**:
+   - Use the same commands as on macOS:
+     ```cmd
+     python search_components.py -k "Arduino Uno"
+     ```
+
+### Windows-Specific Considerations
+
+1. **File Paths**:
+   - Use backslashes (`\`) instead of forward slashes (`/`) in file paths
+   - Example: `C:\Users\YourName\Projects\digikey-api`
+
+2. **Environment Variables**:
+   - To set environment variables permanently:
+     1. Right-click on "This PC" and select "Properties"
+     2. Click "Advanced system settings"
+     3. Click "Environment Variables"
+     4. Add new variables under "User variables"
+
+3. **CSV Files**:
+   - Make sure CSV files are saved with UTF-8 encoding
+   - Use Excel or Notepad++ to create/edit CSV files
+
+4. **Common Issues**:
+   - If you get permission errors, run Command Prompt as Administrator
+   - If you get SSL errors, try updating your Windows certificates
+   - If the script doesn't run, check Python is in your PATH:
+     ```cmd
+     python --version
+     ```
+
+### Setup Script for Windows
+
+You can use this `setup.bat` file to automate the setup process:
+
+```batch
+@echo off
+echo Setting up DigiKey API tool...
+
+:: Check Python version
+python --version
+if errorlevel 1 (
+    echo Python not found. Please install Python 3.9+ first.
+    pause
+    exit /b 1
+)
+
+:: Create virtual environment
+python -m venv digikey-env
+if errorlevel 1 (
+    echo Failed to create virtual environment.
+    pause
+    exit /b 1
+)
+
+:: Activate environment and install dependencies
+call digikey-env\Scripts\activate
+pip install -r requirements.txt
+if errorlevel 1 (
+    echo Failed to install dependencies.
+    pause
+    exit /b 1
+)
+
+:: Create storage directory
+mkdir .digikey_storage
+
+echo Setup complete!
+echo To use the tool, run:
+echo   digikey-env\Scripts\activate
+echo   python search_components.py -k "Arduino Uno"
+pause
+```
+
+To use the setup script:
+1. Download the project files
+2. Run `setup.bat`
+3. Create `config.yaml` with your API credentials
+4. Use the tool as normal

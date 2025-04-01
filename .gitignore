@@ -73,3 +73,6 @@ generate-v3-api/
 # Other repository dependent
 tests/local/
 .env/config.ini
+
+# DigiKey API storage
+.digikey_storage/
